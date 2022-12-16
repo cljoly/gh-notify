@@ -191,7 +191,9 @@ select_notif() {
                 --border-label " Notifications (? help • esc quit) " --border-label-pos 3 \
                 --preview-label " Preview " --preview-label-pos 3 \
                 --preview-window border \
-                --no-separator
+                --no-separator \
+                --bind 'btab:change-preview-window(75%:nohidden|75%:down:nohidden|nohidden)'
+
         }
     else
         _fzf_version_options() {
@@ -199,7 +201,9 @@ select_notif() {
                 --header $'? - Toggle Help\n\n' --color 'header:italic:dim' \
                 --header-first \
                 --border horizontal --color "border:#778899" \
-                --preview-window border-left
+                --preview-window border-left \
+                --bind 'btab:change-preview-window(75%:nohidden|75%:down:nohidden:border-top|nohidden)'
+
         }
     fi
     # If this were passed as a function to fzf, it would be called immediately when fzf is called, in spite of the fact that the assigned hotkey was not triggered.
@@ -218,8 +222,7 @@ select_notif() {
             --bind "ctrl-d:toggle-preview+change-preview:if grep -q PullRequest <<<{4}; then gh pr diff {5} -R {3} | $diff_pager; else $preview_notification; fi" \
             --bind "ctrl-p:toggle-preview+change-preview:if grep -q PullRequest <<<{4}; then gh pr diff {5} --patch -R {3} | $diff_pager; else  $preview_notification; fi" \
             --bind "ctrl-r:+execute-silent($fzf_mark_read)+reload:$reload_arguments" \
-        --bind "tab:toggle-preview+change-preview:$preview_notification" \
-            --bind 'btab:change-preview-window(75%:nohidden|75%:down:nohidden|nohidden)' \
+            --bind "tab:toggle-preview+change-preview:$preview_notification" \
             --preview-window wrap:"$preview_window_visibility":50%:right \
             --preview "$preview_notification" \
             --expect "enter,ctrl-x" | tr '\n' ' '
