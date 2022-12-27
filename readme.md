@@ -47,6 +47,7 @@ gh notify [-Flag]
 | ctrl+x    | write a comment with the editor and exit            |
 | esc       | exit                                                |
 
+---
 ## Customizations
 
 ### Fuzzy Finder (fzf)
@@ -63,9 +64,7 @@ export FZF_DEFAULT_OPTS="
 --bind 'alt-c:clear-query'
 --bind 'alt-u:first,alt-d:last'
 --bind 'alt-r:refresh-preview'
---bind 'ctrl-w:preview-half-page-up,ctrl-s:preview-half-page-down'
-..."`
-
+--bind 'ctrl-w:preview-half-page-up,ctrl-s:preview-half-page-down'"`
 ```
 
 ### GitHub command line tool (gh)

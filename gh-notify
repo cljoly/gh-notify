@@ -166,7 +166,7 @@ print_notifs() {
 }
 
 
-# from https://apple.stackexchange.com/a/123408/11374
+# for comparing multi-digit version numbers https://apple.stackexchange.com/a/123408/11374
 version() {
     echo "$@" | awk -F. '{ printf("%d%03d%03d%03d\n", $1,$2,$3,$4); }'
 }
@@ -174,7 +174,6 @@ version() {
 select_notif() {
     local notif_msg diff_pager open_notification_browser preview_notification required_fzf_version_with_labels fzf_opts selection key repo type num
     notif_msg="$1"
-    [ -n "$notifs" ] || exit 0
     # https://dandavison.github.io/delta
     diff_pager=$'if type -p delta >/dev/null; then delta --width ${FZF_PREVIEW_COLUMNS:-$COLUMNS}; else cat; fi'
     open_notification_browser='if grep -q CheckSuite <<<{4}; then open https://github.com/{3}/actions ; elif grep -q Commit <<<{4}; then gh browse {5} -R {3} ; elif grep -q Discussion <<<{4}; then open https://github.com/{3}/discussions ; elif grep -qE "Issue|PullRequest" <<<{4}; then gh issue view {5} -wR {3}; elif grep -q "[Rr]elease" <<<{4}; then gh release view {5} -wR {3}; else gh repo view -w {3}; fi'
