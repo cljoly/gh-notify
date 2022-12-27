@@ -172,8 +172,9 @@ version() {
 }
 
 select_notif() {
-    local notif_msg open_notification_browser preview_notification selection key repo type num
+    local notif_msg diff_pager open_notification_browser preview_notification required_fzf_version_with_labels fzf_opts selection key repo type num
     notif_msg="$1"
+    [ -n "$notifs" ] || exit 0
     # https://dandavison.github.io/delta
     diff_pager=$'if type -p delta >/dev/null; then delta --width ${FZF_PREVIEW_COLUMNS:-$COLUMNS}; else cat; fi'
     open_notification_browser='if grep -q CheckSuite <<<{4}; then open https://github.com/{3}/actions ; elif grep -q Commit <<<{4}; then gh browse {5} -R {3} ; elif grep -q Discussion <<<{4}; then open https://github.com/{3}/discussions ; elif grep -qE "Issue|PullRequest" <<<{4}; then gh issue view {5} -wR {3}; elif grep -q "[Rr]elease" <<<{4}; then gh release view {5} -wR {3}; else gh repo view -w {3}; fi'
@@ -182,29 +183,23 @@ select_notif() {
 
     # temporary workaround until fzf version 0.35.0 is more widely available
     # see https://repology.org/project/fzf/versions
-    # compare multi-digit version numbers
     if [ "$(version "$(fzf --version)")" -ge "$(version $required_fzf_version_with_labels)" ]; then
-        # from https://github.com/junegunn/fzf-git.sh/blob/main/fzf-git.sh#L104
-        _fzf_version_options() {
-            fzf -- "$@" \
-                --border rounded --color 'border:255,label:244:bold' \
-                --border-label " Notifications (? help • esc quit) " --border-label-pos 3 \
-                --preview-label " Preview " --preview-label-pos 3 \
-                --preview-window border \
-                --no-separator \
-                --bind 'btab:change-preview-window(75%:nohidden|75%:down:nohidden|nohidden)'
-
-        }
+        fzf_opts=(
+            --border rounded --color 'border:255,label:244:bold'
+            --border-label " Notifications (? help • esc quit) " --border-label-pos 3
+            --preview-label " Preview " --preview-label-pos 3
+            --preview-window border
+            --no-separator
+            --bind 'btab:change-preview-window(75%:nohidden|75%:down:nohidden|nohidden)'
+        )
     else
-        _fzf_version_options() {
-            fzf -- "$@" \
-                --header $'? - Toggle Help\n\n' --color 'header:italic:dim' \
-                --header-first \
-                --border horizontal --color "border:#778899" \
-                --preview-window border-left \
-                --bind 'btab:change-preview-window(75%:nohidden|75%:down:nohidden:border-top|nohidden)'
-
-        }
+        fzf_opts=(
+            --header $'? - Toggle Help\n\n' --color 'header:italic:dim'
+            --header-first
+            --border horizontal --color "border:#778899"
+            --preview-window border-left
+            --bind 'btab:change-preview-window(75%:nohidden|75%:down:nohidden:border-top|nohidden)'
+        )
     fi
     # If this were passed as a function to fzf, it would be called immediately when fzf is called, in spite of the fact that the assigned hotkey was not triggered.
     fzf_mark_read="gh api --header X-GitHub-Api-Version:$GH_REST_API_VERSION --method PUT notifications -f last_read_at=$timestamp -F read=true --silent"
@@ -213,7 +208,7 @@ select_notif() {
     # The key combination ctrl-m is a synonym for enter,
     # therefore the key to mark notifications as read shall not be ctrl-m.
     selection=$(
-        _fzf_version_options <<<"$notif_msg" \
+        fzf "${fzf_opts[@]}" \
             --ansi --no-multi \
             --reverse --info=inline --pointer='▶' \
             --bind "change:first" \
@@ -225,7 +220,8 @@ select_notif() {
             --bind "tab:toggle-preview+change-preview:$preview_notification" \
             --preview-window wrap:"$preview_window_visibility":50%:right \
             --preview "$preview_notification" \
-            --expect "enter,ctrl-x" | tr '\n' ' '
+            --expect "enter,ctrl-x" <<<"$notif_msg" |
+            tr '\n' ' '
     )
 
     # Hotkey actions that close fzf are defined below
