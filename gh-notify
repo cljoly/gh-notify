@@ -165,19 +165,21 @@ print_notifs() {
     echo "$all_notifs" | grep -v "$exclusion_string" | grep "$filter_string" | column -t -s $'\t'
 }
 
-
 # for comparing multi-digit version numbers https://apple.stackexchange.com/a/123408/11374
 version() {
     echo "$@" | awk -F. '{ printf("%d%03d%03d%03d\n", $1,$2,$3,$4); }'
 }
 
 select_notif() {
-    local notif_msg diff_pager open_notification_browser preview_notification required_fzf_version_with_labels fzf_opts selection key repo type num
+    local notif_msg diff_pager open_notification_browser preview_notification fzf_mark_read required_fzf_version_with_labels fzf_opts selection key repo type num
     notif_msg="$1"
     # https://dandavison.github.io/delta
     diff_pager=$'if type -p delta >/dev/null; then delta --width ${FZF_PREVIEW_COLUMNS:-$COLUMNS}; else cat; fi'
     open_notification_browser='if grep -q CheckSuite <<<{4}; then open https://github.com/{3}/actions ; elif grep -q Commit <<<{4}; then gh browse {5} -R {3} ; elif grep -q Discussion <<<{4}; then open https://github.com/{3}/discussions ; elif grep -qE "Issue|PullRequest" <<<{4}; then gh issue view {5} -wR {3}; elif grep -q "[Rr]elease" <<<{4}; then gh release view {5} -wR {3}; else gh repo view -w {3}; fi'
     preview_notification='echo \[{1} {2} - {4}\] ;if grep -q Issue <<<{4}; then gh issue view {5} -R {3} --comments; elif grep -q PullRequest <<<\"{4}\"; then gh pr view {5} -R {3} --comments; elif grep -q "[Rr]elease" <<<{4}; then gh release view {5} -R {3}; else echo "Notification preview for {4} is not supported."; fi'
+    # If this were passed as a function to fzf, it would be called immediately when fzf is called, in spite of the fact that the assigned hotkey was not triggered.
+    fzf_mark_read="gh api --header X-GitHub-Api-Version:$GH_REST_API_VERSION --method PUT notifications -f last_read_at=$timestamp -F read=true --silent"
+
     required_fzf_version_with_labels="0.35.0"
 
     # temporary workaround until fzf version 0.35.0 is more widely available
@@ -200,8 +202,6 @@ select_notif() {
             --bind 'btab:change-preview-window(75%:nohidden|75%:down:nohidden:border-top|nohidden)'
         )
     fi
-    # If this were passed as a function to fzf, it would be called immediately when fzf is called, in spite of the fact that the assigned hotkey was not triggered.
-    fzf_mark_read="gh api --header X-GitHub-Api-Version:$GH_REST_API_VERSION --method PUT notifications -f last_read_at=$timestamp -F read=true --silent"
 
     # See the man page (man fzf) for an explanation of the arguments.
     # The key combination ctrl-m is a synonym for enter,
